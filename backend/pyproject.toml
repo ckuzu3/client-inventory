@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "client-inventory"
+version = "0.1.0"
+description = "A small inventory and baseline-compliance service for managed Windows clients."
+readme = "../README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "ckuzu3" }]
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy>=2.0.36",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "alembic>=1.14",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2"]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
+
+[project.scripts]
+client-inventory-seed = "client_inventory.seed:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # import sorting
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "UP",   # pyupgrade
+    "SIM",  # simplifications
+    "RUF",  # ruff-specific
+    "ANN",  # missing annotations
+    "D",    # docstrings
+    "PT",   # pytest style
+    "ARG",  # unused arguments
+    "DTZ",  # naive datetime usage
+    "TID",  # tidy imports
+]
+ignore = [
+    "D203",  # incompatible with D211, which ruff prefers
+    "D213",  # incompatible with D212, which ruff prefers
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests document themselves through their names, and fixtures are shadowed on purpose.
+"tests/*" = ["D100", "D103", "D104"]
+"migrations/*" = ["D103", "INP001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/client_inventory", "tests", "migrations"]
+mypy_path = "src"
+strict = true
+warn_unreachable = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = [
+    # A warning that nobody reads is a warning that hides a real one, so they are errors.
+    "error",
+    # Starlette's TestClient asks for a different HTTP client library. It does not change
+    # the behaviour under test, and pulling in a second HTTP client for the test suite
+    # alone is not a trade I want to make. Reviewed on 2026-10-27.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated:",
+]
+
+[tool.coverage.run]
+source = ["client_inventory"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+# A coverage number nobody enforces is a description, not a promise.
+fail_under = 90
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
