@@ -1,0 +1,37 @@
+# Development stack: PostgreSQL plus the API. The credentials here are local
+# throwaways; nothing in this file is meant to reach an environment that matters.
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+      POSTGRES_DB: inventory
+    ports:
+      - "5432:5432"
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory -d inventory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      CLIENT_INVENTORY_DATABASE_URL: postgresql+psycopg://inventory:inventory@database:5432/inventory
+      CLIENT_INVENTORY_CORS_ORIGINS: '["http://localhost:4200"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    # The schema is applied before the server starts. The application itself never
+    # creates tables, so this is the only place the database structure changes.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn client_inventory.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  database-data:

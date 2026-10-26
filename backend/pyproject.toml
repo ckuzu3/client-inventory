@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "client-inventory"
 version = "0.1.0"
 description = "A small inventory and baseline-compliance service for managed Windows clients."
-readme = "../README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [{ name = "ckuzu3" }]
