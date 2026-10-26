@@ -9,16 +9,15 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: backend
-
 jobs:
   # Lint, type check and the full suite on in-memory SQLite. Two Python versions,
   # because the project claims to support both.
   backend:
     name: Backend (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     strategy:
       fail-fast: false
       matrix:
@@ -62,6 +61,9 @@ jobs:
   backend-postgres:
     name: Backend on PostgreSQL
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
     services:
       postgres:
@@ -100,3 +102,39 @@ jobs:
 
       - name: Test
         run: pytest --cov --cov-report=term-missing
+
+  # The frontend is checked the same way the backend is: lint, types, tests, build.
+  # Angular 22 runs its tests on Vitest with jsdom, so no browser is needed here.
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

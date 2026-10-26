@@ -2,7 +2,8 @@
 
 A small service that collects inventory reports from managed Windows clients and measures
 each one against a configurable baseline: operating system build, disk encryption, patch
-age, last check-in and free disk space.
+age, last check-in and free disk space. A FastAPI backend and an Angular dashboard that
+reads it.
 
 All data in this repository is synthetic. Nothing here comes from a real environment.
 
@@ -54,8 +55,12 @@ and contains no policy.
   models describe.
 - A seeded generator for synthetic sample data, so the project can be demonstrated
   without a fleet.
-- 93 tests, 99 percent coverage, with the floor enforced at 90. Ruff and mypy in strict
-  mode are clean.
+- An Angular dashboard: fleet tiles, a worklist of clients with their findings, a filter
+  for clients that need attention, and paging. It states the active baseline in words,
+  read from the API rather than repeated in the frontend.
+- 93 backend tests and 40 frontend tests. Backend coverage is 99 percent with the floor
+  enforced at 90; ruff, mypy strict, ESLint and the Angular strict template checks are
+  clean.
 
 ## Architecture
 
@@ -77,6 +82,16 @@ repository.py           compliance.py          schemas.py
      |
      v
   SQLite (development, tests) | PostgreSQL (docker-compose, CI)
+
+
+frontend/
+  app.ts                  shell, one page, so no router
+    |
+  pages/dashboard.ts      owns all state and all loading
+    |              `-- services/inventory-api.ts   the only place that knows HTTP exists
+    v              v
+  components/summary-cards.ts   components/client-table.ts
+    presentational: take inputs, render, fetch nothing
 ```
 
 Two tables, on purpose. `client` holds the current state and is updated in place, which
@@ -108,6 +123,14 @@ CLIENT_INVENTORY_DATABASE_URL="sqlite+pysqlite:///./demo.sqlite3" \
 ```
 
 The interactive API documentation is then at `http://127.0.0.1:8000/docs`.
+
+The dashboard, against that API:
+
+```bash
+cd frontend
+npm install
+npm start                     # http://localhost:4200
+```
 
 On PostgreSQL, with the schema applied by Alembic:
 
@@ -188,6 +211,20 @@ One worklist entry from the same run, worst finding first:
 }
 ```
 
+The dashboard rendered against the 40 generated clients, read out of the running page:
+
+```text
+HOSTNAME   OPERATING SYSTEM         LAST SEEN     FREE DISK  FINDINGS
+ws-0039    Windows 10.0.19045.4529  45 days ago   60%        HIGH os version below baseline
+                                                             MEDIUM not seen recently
+mac-0036   macOS 14.7               45 days ago   35%        MEDIUM not seen recently
+mac-0018   macOS 14.7               45 days ago   18%        MEDIUM not seen recently
+```
+
+The two Macs carry no build finding, because the baseline's build number is a Windows
+one and the rule is skipped for anything else. That decision is visible in the UI rather
+than only in a test.
+
 ## Tests
 
 ```bash
@@ -198,9 +235,16 @@ pytest --cov                  # 93 tests on in-memory SQLite, no services needed
 CLIENT_INVENTORY_TEST_DATABASE_URL="postgresql+psycopg://inventory:inventory@localhost:5432/inventory" pytest
 ```
 
-CI runs lint, format check, mypy and the suite on Python 3.12 and 3.13, and then runs the
-whole suite again against a PostgreSQL service container. That second job is what turns
-"it also works on PostgreSQL" from a claim into something that was actually run.
+```bash
+cd frontend
+npm test                      # 40 tests on Vitest with jsdom, no browser needed
+npm run lint && npm run typecheck && npm run build
+```
+
+CI runs lint, format check, mypy and the backend suite on Python 3.12 and 3.13, runs that
+suite again against a PostgreSQL service container, and runs the frontend's lint, format
+check, type check, tests and build. The PostgreSQL job is what turns "it also works on
+PostgreSQL" from a claim into something that was actually run.
 
 ## What I learned
 
@@ -229,8 +273,8 @@ whole suite again against a PostgreSQL service container. That second job is wha
 
 ## Possible extensions
 
-- A frontend. The API is built for one, which is why the baseline is an endpoint, and the
-  CORS origin is already configurable.
+- A detail view per client. The API already returns the report history; the dashboard
+  does not show it yet.
 - A collector. The agent that produces these reports is deliberately not in this
   repository: on Windows it is a PowerShell scheduled task, and that is a separate
   project with a separate release cycle.
@@ -243,6 +287,9 @@ whole suite again against a PostgreSQL service container. That second job is wha
 
 ## Known limits
 
+- **The frontend talks to one hard-coded origin.** `API_BASE_URL` is provided in
+  `app.config.ts`. Served from the same origin as the API it becomes an empty string; a
+  real deployment would inject it at build time.
 - **The Docker setup is unverified.** `docker-compose.yml` and `backend/Dockerfile` are
   written but have never been built: there is no Docker on the machine I developed this
   on. Everything else in this README was run.

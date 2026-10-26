@@ -253,12 +253,68 @@ warning in `pyproject.toml` with a comment and a date, rather than pulling a sec
 client into the test environment for a message that does not change behaviour. If that
 deprecation becomes a removal, the comment is where the next person starts.
 
-## 11. If I had to extend this tomorrow
+## 11. The frontend
+
+Angular 22, standalone components, signals, zoneless change detection. Three decisions
+are worth naming.
+
+**One page, so no router.** The generated project came with an empty `Routes` array and a
+`<router-outlet>`. Both were deleted. A router with nothing to route is dead code, and the
+commit that adds a second page is the right place to add it back.
+
+**The split is container and presentation.** `pages/dashboard.ts` owns every piece of
+state and every request. `summary-cards.ts` and `client-table.ts` take inputs and render;
+they fetch nothing and know nothing about HTTP. That is why their tests are a `setInput`
+and an assertion, with no HTTP mock anywhere, and why the dashboard's test asserts on
+state and requests rather than on table cells.
+
+**The frontend does not repeat the thresholds.** The baseline comes from
+`GET /api/v1/baseline` and is printed in words above the table. Hard-coding "build
+10.0.26100" in the template would mean changing an environment variable on the server and
+quietly having the page lie about what it measured.
+
+Smaller things that follow the same reasoning as the backend:
+
+- `API_BASE_URL` is an `InjectionToken`, not an imported constant, so a test points the
+  service somewhere else without touching the code under test.
+- `describeAge` takes `now` as a parameter, exactly as the backend's rules take a
+  reference date, so the rendered text is a fixed string in a test.
+- `FindingCode` is a union of the known codes plus `(string & {})`. Autocomplete still
+  works, and a rule a newer backend adds renders with its underscores replaced instead of
+  producing an empty cell. There is a test with a made-up code for that.
+- The service leaves unset query parameters out entirely. Sending `os_name=` would ask
+  the API for clients whose operating system is the empty string, which is a different
+  question from "no filter".
+- A failed client request shows "Could not reach the inventory API", not a status code. A
+  reader cannot act on "500". A failed *baseline* request shows nothing at all, because
+  it only costs the explanatory line.
+
+**Strictness.** The generated `tsconfig.json` did not switch `strict` on. The backend is
+checked by mypy in strict mode, and a frontend laxer than its own API is the wrong way
+round, so `strict`, `noUnusedLocals`, `noUnusedParameters` and Angular's `strictTemplates`
+are all on. `strictTemplates` is the one that earns its place: a renamed field becomes a
+build error instead of a blank cell.
+
+**Tests run without a browser.** Angular 22 generates a Vitest and jsdom setup rather than
+Karma and Chrome, so the CI job needs no browser and the suite finishes in about two
+seconds.
+
+**What I verified by hand.** The dashboard was run against the real API with 40 generated
+clients: the tiles showed 40 clients and 37 needing attention, the filter reduced the
+total to 37 with every visible row carrying a finding, paging moved to "26-37 of 37" and
+disabled the Next button at the end, and the console stayed empty. The detail I was most
+pleased to see: the two macOS rows carry no build finding, because the backend skips the
+Windows build rule for them. That is the same decision from section 6, visible in the UI.
+
+## 12. If I had to extend this tomorrow
 
 A new rule is a function in `compliance.py`, a member of `FindingCode`, and a test. A new
 field is a column, a migration, a schema field, and the migration test catches it if I
 forget one. A frontend needs no backend change: the baseline and the summary are already
 endpoints.
+
+On the frontend, a client detail view is the obvious next page: the API already returns
+the report history, and that is the point where the router comes back.
 
 The two things I would do before this ran anywhere real: per-device authentication on the
 report endpoint, and an upsert on conflict instead of read-then-insert.
