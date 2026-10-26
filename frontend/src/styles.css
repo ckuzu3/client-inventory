@@ -1,0 +1,40 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: #f3f3f6;
+  margin: 0;
+}
+
+/* Severity badges are shared by the summary tiles and the table, so they live here
+   rather than being defined twice with slightly different colours. */
+.badge {
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.4rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge.high {
+  background: #fdeceb;
+  color: #8c1d18;
+}
+
+.badge.medium {
+  background: #fdf3e2;
+  color: #7a4f01;
+}
+
+.badge.low {
+  background: #eef1fd;
+  color: #33438c;
+}
+
+.badge.ok {
+  background: #e8f3e9;
+  color: #1f5c22;
+}

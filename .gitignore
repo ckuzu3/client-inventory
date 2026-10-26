@@ -23,8 +23,9 @@ dist/
 .env.*
 !.env.example
 
-# Editor and OS noise
+# Editor, tooling and OS noise
 .vscode/
+.claude/
 .idea/
 Thumbs.db
 desktop.ini
