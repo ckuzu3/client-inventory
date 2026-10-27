@@ -1,5 +1,7 @@
 # Client Inventory
 
+[![CI](https://github.com/ckuzu3/client-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/ckuzu3/client-inventory/actions/workflows/ci.yml)
+
 A small service that collects inventory reports from managed Windows clients and measures
 each one against a configurable baseline: operating system build, disk encryption, patch
 age, last check-in and free disk space. A FastAPI backend and an Angular dashboard that
@@ -290,9 +292,10 @@ PostgreSQL" from a claim into something that was actually run.
 - **The frontend talks to one hard-coded origin.** `API_BASE_URL` is provided in
   `app.config.ts`. Served from the same origin as the API it becomes an empty string; a
   real deployment would inject it at build time.
-- **The Docker setup is unverified.** `docker-compose.yml` and `backend/Dockerfile` are
-  written but have never been built: there is no Docker on the machine I developed this
-  on. Everything else in this README was run.
+- **Docker is verified, PostgreSQL in CI.** The compose stack has been built and run:
+  Alembic applies the schema in the container, a report posted through the API lands as a
+  row in PostgreSQL, and both containers report healthy. What I have never done is run it
+  anywhere but on my own machine and a CI runner.
 - **PostgreSQL is verified in CI, not on my machine.** The whole suite runs against a
   PostgreSQL service container in the pipeline and passes; locally I have only ever run it
   on SQLite.

@@ -208,9 +208,10 @@ last test left behind.
 
 ### What is not tested, and why
 
-- **Docker.** `docker-compose.yml` and the `Dockerfile` have never been built. There is no
-  Docker on the machine I wrote this on. They are my best reading of the documentation,
-  not something I ran, and the README says so.
+- **Deployment beyond a laptop.** The compose stack builds and runs, with Alembic
+  applying the schema in the container and a posted report landing in PostgreSQL. What is
+  untested is anything a real deployment adds: restarts, upgrades, a second instance, or
+  a volume that already holds data from an older schema.
 - **PostgreSQL, locally.** The pipeline runs the whole suite against a PostgreSQL service
   container and it passes, so the claim is checked — but not by me on this machine, where
   only SQLite has ever run. The two uncovered branches in `database.py` are precisely the
