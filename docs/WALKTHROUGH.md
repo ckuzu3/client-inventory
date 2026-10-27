@@ -211,9 +211,10 @@ last test left behind.
 - **Docker.** `docker-compose.yml` and the `Dockerfile` have never been built. There is no
   Docker on the machine I wrote this on. They are my best reading of the documentation,
   not something I ran, and the README says so.
-- **PostgreSQL, locally.** The code paths are written for it and CI is configured to prove
-  it, but until that pipeline runs, SQLite is the evidence I have. The two uncovered
-  branches in `database.py` are precisely the non-SQLite path.
+- **PostgreSQL, locally.** The pipeline runs the whole suite against a PostgreSQL service
+  container and it passes, so the claim is checked — but not by me on this machine, where
+  only SQLite has ever run. The two uncovered branches in `database.py` are precisely the
+  non-SQLite path.
 - **Concurrency.** Two reports for the same new hostname arriving at once would both try
   to insert. The unique index makes the second one fail rather than duplicate, but there
   is no retry and no test. On PostgreSQL the honest fix is an upsert with

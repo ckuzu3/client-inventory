@@ -293,9 +293,9 @@ PostgreSQL" from a claim into something that was actually run.
 - **The Docker setup is unverified.** `docker-compose.yml` and `backend/Dockerfile` are
   written but have never been built: there is no Docker on the machine I developed this
   on. Everything else in this README was run.
-- **The PostgreSQL path has not run on my machine either.** The code is written for it and
-  CI is configured to prove it; until that pipeline has run, SQLite is what I have
-  evidence for.
+- **PostgreSQL is verified in CI, not on my machine.** The whole suite runs against a
+  PostgreSQL service container in the pipeline and passes; locally I have only ever run it
+  on SQLite.
 - **No authentication, no rate limiting.** See the extensions above.
 
 ## License
